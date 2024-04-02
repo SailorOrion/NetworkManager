@@ -2070,7 +2070,10 @@
         <property name="timeout"
                   nmcli-description="Timeout for the VPN service to establish the connection. Some services may take quite a long time to connect. Value of 0 means a default timeout, which is 60 seconds (unless overridden by vpn.timeout in configuration file). Values greater than zero mean timeout in seconds."
                   format="integer"
-                  values="0 - 4294967295" />
+                  values="0 - 4294967295" />       
+        <property name="split-excludes"
+                  nmcli-description="List of IP ranges to be excluded from the tunnel. The valid syntax is ip[/prefix] ...[,ip[/prefix]...]"
+                  format="string" />
     </setting>
     <setting name="vrf" >
         <property name="table"

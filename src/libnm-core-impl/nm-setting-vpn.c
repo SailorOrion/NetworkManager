@@ -36,7 +36,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingVpn,
                              PROP_PERSISTENT,
                              PROP_DATA,
                              PROP_SECRETS,
-                             PROP_TIMEOUT, );
+                             PROP_TIMEOUT,
+                             PROP_SPLIT_EXCLUDES, );
 
 typedef struct {
     char *service_type;
@@ -66,6 +67,8 @@ typedef struct {
     GHashTable *secrets;
 
     guint32 timeout;
+
+    GPtrArray *split_excludes;
 
     /* Whether the VPN stays up across link changes, until the user
      * explicitly disconnects it.
@@ -959,6 +962,35 @@ vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     return g_variant_builder_end(&builder);
 }
 
+static GVariant *
+split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
+    NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+
+    // TODO do we have to make sure this is null terminated?
+    return priv->split_excludes ? g_variant_new_strv((const gchar * const *)priv->split_excludes->pdata, -1) : NULL;
+}
+
+static gboolean
+split_excludes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil) {
+    NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+    gs_free const char      **s = NULL;
+    gsize                     len;
+    gsize                     i;
+
+    nm_clear_pointer(&priv->split_excludes, g_ptr_array_unref);
+
+    s = g_variant_get_strv(value, &len);
+    if (len > 0) {
+        priv->split_excludes = g_ptr_array_new_full(len, g_free);
+        for (i = 0; i < len; i++)
+            g_ptr_array_add(priv->split_excludes, g_strdup(s[i]));
+    }
+    return TRUE;
+}
+
+static NMTernary //TODO STUB
+compare_fcn_split_excludes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil) {return TRUE; }
+
 /*****************************************************************************/
 
 static void
@@ -1201,6 +1233,20 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingVpnPrivate,
                                               timeout);
+
+    obj_properties[PROP_SPLIT_EXCLUDES] = g_param_spec_boxed(
+        NM_SETTING_VPN_SPLIT_EXCLUDES,
+        "",
+        "",
+        G_TYPE_STRV,
+        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS); // TODO: Sure?
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_SPLIT_EXCLUDES],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .to_dbus_fcn   = split_excludes_to_dbus,
+                                       .from_dbus_fcn = split_excludes_from_dbus,
+                                       .compare_fcn   = compare_fcn_split_excludes, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

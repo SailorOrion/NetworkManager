@@ -455,7 +455,7 @@ get_vpn_connection_type(NMConnection *connection)
     return p ? p + 1 : type;
 }
 
-/* VPN parameters can be found at:
+/* VPN parameters can be found at: // TODO wrong
  * http://git.gnome.org/browse/network-manager-openvpn/tree/src/nm-openvpn-service.h
  * http://git.gnome.org/browse/network-manager-vpnc/tree/src/nm-vpnc-service.h
  * http://git.gnome.org/browse/network-manager-pptp/tree/src/nm-pptp-service.h

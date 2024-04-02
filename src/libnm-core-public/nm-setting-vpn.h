@@ -26,12 +26,13 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_VPN_SETTING_NAME "vpn"
 
-#define NM_SETTING_VPN_SERVICE_TYPE "service-type"
-#define NM_SETTING_VPN_USER_NAME    "user-name"
-#define NM_SETTING_VPN_PERSISTENT   "persistent"
-#define NM_SETTING_VPN_DATA         "data"
-#define NM_SETTING_VPN_SECRETS      "secrets"
-#define NM_SETTING_VPN_TIMEOUT      "timeout"
+#define NM_SETTING_VPN_SERVICE_TYPE   "service-type"
+#define NM_SETTING_VPN_USER_NAME      "user-name"
+#define NM_SETTING_VPN_PERSISTENT     "persistent"
+#define NM_SETTING_VPN_DATA           "data"
+#define NM_SETTING_VPN_SECRETS        "secrets"
+#define NM_SETTING_VPN_TIMEOUT        "timeout"
+#define NM_SETTING_VPN_SPLIT_EXCLUDES "split-excludes"
 
 typedef struct _NMSettingVpnClass NMSettingVpnClass;
 
