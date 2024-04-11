@@ -1201,7 +1201,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
         g_param_spec_boxed(NM_SETTING_VPN_SECRETS,
                            "",
                            "",
-                           G_TYPE_HASH_TABLE,
+                           G_TYPE_PTR_ARRAY,
                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET
                                | NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS | G_PARAM_STATIC_STRINGS);
     _nm_properties_override_gobj(
@@ -1234,6 +1234,11 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                               NMSettingVpnPrivate,
                                               timeout);
 
+    /**
+     * NMSettingVpn:split-excludes: (type GPtrArray)
+     * 
+     * List of IP ranges that are to be excluded from being routed into the VPN.
+    */
     obj_properties[PROP_SPLIT_EXCLUDES] = g_param_spec_boxed(
         NM_SETTING_VPN_SPLIT_EXCLUDES,
         "",

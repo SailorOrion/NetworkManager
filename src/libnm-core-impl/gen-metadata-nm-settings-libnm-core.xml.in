@@ -2481,6 +2481,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="split-excludes"
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
     </setting>
     <setting name="vrf"
              gtype="NMSettingVrf"

@@ -7887,6 +7887,9 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_TIMEOUT,
         .property_type =                &_pt_gobject_int,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SPLIT_EXCLUDES,
+        .property_type = &_pt_gobject_string,
+    ),
     NULL
 };
 
