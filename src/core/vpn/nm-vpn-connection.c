@@ -677,6 +677,50 @@ _get_vpn_timeout(NMVpnConnection *self)
     return timeout;
 }
 
+
+/* TODO TESTS */
+static void
+_create_routing_config_for_split_exclues(NMVpnConnection *self)
+{
+    NMSettingVpn *s_vpn;
+    GPtrArray *split_excludes
+
+
+    s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
+    // TODO - What happens if this fails
+
+    split_excludes = nm_setting_vpn_get_split_excludes(s_vpn);
+
+    if (split_excludes == NULL)
+        return;
+
+    int table_index = 100;
+    int rule_index = 100;
+    /* We've got split excludes, do the following:
+    - Create new route table (id could be name of vpn?)
+    - Add default route to vpn into that route table
+    - Add a routing rule at 100(?) for each entry in split excludes to go to 100+2
+    - Add a routing rule at 101 to lookup in the table created above
+    - Add a routing rule at 102 to do nothing
+    Crude Example: */
+    NMPlatformIPXRoute r;
+    r.r4.table_coerced = table_index;
+    // default route
+    NMPlatformRoutingRule rule_exclude;
+    rule.priority = rule_index;
+    rule.action = FR_ACT_GOTO;
+    //rule.? target? is that flow? or table?
+    NMPlatformRoutingRule rule_goto;
+    rule.priority = rule_index + 1;
+    rule.action = FR_ACT_TO_TBL;
+    rule.table = table_index;
+
+    NMPlatformRoutingRule rule_nop;
+    rule.priority = rule_index + 2;
+    rule.action = FR_ACT_NOP;
+}
+
+
 /*****************************************************************************/
 
 static gboolean

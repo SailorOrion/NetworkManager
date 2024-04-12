@@ -535,6 +535,14 @@ nm_setting_vpn_get_timeout(NMSettingVpn *setting)
     return NM_SETTING_VPN_GET_PRIVATE(setting)->timeout;
 }
 
+const GPtrArray *
+nm_setting_vpn_get_split_excludes(NMSettingVpn *setting)
+{
+    // TODO: What to return on failure? null?
+
+    return NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes;
+}
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
