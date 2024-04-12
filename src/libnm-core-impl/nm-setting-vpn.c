@@ -1014,6 +1014,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_SECRETS:
         g_value_take_boxed(value, _nm_utils_copy_strdict(priv->secrets));
         break;
+    case PROP_SPLIT_EXCLUDES:
+        g_value_take_boxed(value, _nm_utils_copy_object_array(priv->split_excludes)); // TODO Object array or array?
+        break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
@@ -1061,6 +1064,23 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
     } break;
+    case PROP_SPLIT_EXCLUDES:
+    {
+        gs_unref_ptrarray GPtrArray *array = NULL;
+        const char *const *src = g_value_get_boxed(value);
+
+        array = g_steal_pointer(&priv->split_excludes);
+
+        if (src && src[0]) {
+            gsize i, l;
+
+            l                 = NM_PTRARRAY_LEN(src);
+            priv->split_excludes = g_ptr_array_new_full(l, g_free);
+            for (i = 0; i < l; i++)
+                g_ptr_array_add(priv->split_excludes, g_strdup(src[i]));
+        }
+        break;
+    } break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -1093,6 +1113,7 @@ finalize(GObject *object)
 
     nm_g_hash_table_unref(priv->data);
     nm_g_hash_table_unref(priv->secrets);
+    nm_g_ptr_array_unref(priv->split_excludes);
 
     G_OBJECT_CLASS(nm_setting_vpn_parent_class)->finalize(object);
 }
