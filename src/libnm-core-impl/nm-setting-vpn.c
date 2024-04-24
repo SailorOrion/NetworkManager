@@ -68,7 +68,7 @@ typedef struct {
 
     guint32 timeout;
 
-    GPtrArray *split_excludes;
+    NMValueStrv split_excludes;
 
     /* Whether the VPN stays up across link changes, until the user
      * explicitly disconnects it.
@@ -535,12 +535,53 @@ nm_setting_vpn_get_timeout(NMSettingVpn *setting)
     return NM_SETTING_VPN_GET_PRIVATE(setting)->timeout;
 }
 
-const GPtrArray *
+/**
+ * nm_setting_vpn_get_split_excludes:
+ * @setting: the #NMSettingVpn
+ *
+ * Returns: the #NMSettingVpn:split-excludes property of the setting
+ *
+ * Since: 1.48
+ **/
+const char *const *
 nm_setting_vpn_get_split_excludes(NMSettingVpn *setting)
 {
-    // TODO: What to return on failure? null?
+    g_return_val_if_fail(NM_IS_SETTING_VPN(setting), 0);
 
-    return NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes;
+    return nm_strvarray_get_strv_notnull(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr, NULL);
+}
+
+/**
+ * nm_setting_vpn_get_split_excludes_items:
+ * @setting: the #NMSettingVpn
+ *
+ * Returns: the number of IP ranges
+ *
+ * Since: 1.48
+ **/
+guint
+nm_setting_vpn_get_split_excludes_items(NMSettingVpn *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_VPN(setting), 0);
+
+    return nm_g_array_len(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr);
+}
+
+/**
+ * nm_setting_vpn_get_split_excludes_item:
+ * @setting: the #NMSettingVpn
+ * @idx: the zero-based index of the IP range entry
+ *
+ * Returns: the IP range string at index @idx
+ *
+ * Since: 1.48
+ **/
+const char *
+nm_setting_vpn_get_split_excludes_item(NMSettingVpn *setting, guint idx)
+{
+    g_return_val_if_fail(NM_IS_SETTING_VPN(setting), 0);
+
+    return nm_strvarray_get_idxnull_or_greturn(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr, idx);
 }
 
 static gboolean
@@ -971,33 +1012,24 @@ vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
-    NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+_nm_split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
+	const char *const *split_excludes;
 
-    // TODO do we have to make sure this is null terminated?
-    return priv->split_excludes ? g_variant_new_strv((const gchar * const *)priv->split_excludes->pdata, -1) : NULL;
+	split_excludes = nm_setting_vpn_get_split_excludes(NM_SETTING_VPN(setting));
+
+	return g_variant_new_strv(split_excludes, -1);
 }
 
 static gboolean
-split_excludes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil) {
-    NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
-    gs_free const char      **s = NULL;
-    gsize                     len;
-    gsize                     i;
+_nm_split_excludes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil) {
+    const gchar **split_excludes;
 
-    nm_clear_pointer(&priv->split_excludes, g_ptr_array_unref);
+    split_excludes = g_variant_get_strv(value, NULL);
 
-    s = g_variant_get_strv(value, &len);
-    if (len > 0) {
-        priv->split_excludes = g_ptr_array_new_full(len, g_free);
-        for (i = 0; i < len; i++)
-            g_ptr_array_add(priv->split_excludes, g_strdup(s[i]));
-    }
+    g_object_set(setting, NM_SETTING_VPN_SPLIT_EXCLUDES, split_excludes, NULL);
+
     return TRUE;
 }
-
-static NMTernary //TODO STUB
-compare_fcn_split_excludes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil) {return TRUE; }
 
 /*****************************************************************************/
 
@@ -1013,9 +1045,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_SECRETS:
         g_value_take_boxed(value, _nm_utils_copy_strdict(priv->secrets));
-        break;
-    case PROP_SPLIT_EXCLUDES:
-        g_value_take_boxed(value, _nm_utils_copy_object_array(priv->split_excludes)); // TODO Object array or array?
         break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
@@ -1064,23 +1093,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
     } break;
-    case PROP_SPLIT_EXCLUDES:
-    {
-        gs_unref_ptrarray GPtrArray *array = NULL;
-        const char *const *src = g_value_get_boxed(value);
-
-        array = g_steal_pointer(&priv->split_excludes);
-
-        if (src && src[0]) {
-            gsize i, l;
-
-            l                 = NM_PTRARRAY_LEN(src);
-            priv->split_excludes = g_ptr_array_new_full(l, g_free);
-            for (i = 0; i < l; i++)
-                g_ptr_array_add(priv->split_excludes, g_strdup(src[i]));
-        }
-        break;
-    } break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -1113,7 +1125,6 @@ finalize(GObject *object)
 
     nm_g_hash_table_unref(priv->data);
     nm_g_hash_table_unref(priv->secrets);
-    nm_g_ptr_array_unref(priv->split_excludes);
 
     G_OBJECT_CLASS(nm_setting_vpn_parent_class)->finalize(object);
 }
@@ -1230,7 +1241,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
         g_param_spec_boxed(NM_SETTING_VPN_SECRETS,
                            "",
                            "",
-                           G_TYPE_PTR_ARRAY,
+                           G_TYPE_HASH_TABLE,
                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET
                                | NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS | G_PARAM_STATIC_STRINGS);
     _nm_properties_override_gobj(
@@ -1264,23 +1275,26 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                               timeout);
 
     /**
-     * NMSettingVpn:split-excludes: (type GPtrArray)
+     * NMSettingVpn:split-excludes:
      * 
      * List of IP ranges that are to be excluded from being routed into the VPN.
+     *
+     * Since: 1.48
     */
-    obj_properties[PROP_SPLIT_EXCLUDES] = g_param_spec_boxed(
-        NM_SETTING_VPN_SPLIT_EXCLUDES,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS); // TODO: Sure?
-    _nm_properties_override_gobj(
+    _nm_setting_property_define_direct_strv(
         properties_override,
-        obj_properties[PROP_SPLIT_EXCLUDES],
+        obj_properties,
+        NM_SETTING_VPN_SPLIT_EXCLUDES,
+        PROP_SPLIT_EXCLUDES,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
-                                       .to_dbus_fcn   = split_excludes_to_dbus,
-                                       .from_dbus_fcn = split_excludes_from_dbus,
-                                       .compare_fcn   = compare_fcn_split_excludes, ));
+                                       .direct_type   = NM_VALUE_TYPE_STRV,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                       .to_dbus_fcn   = _nm_split_excludes_to_dbus,
+                                       .from_dbus_fcn = _nm_split_excludes_from_dbus, ),
+        NMSettingVpnPrivate,
+        split_excludes,
+        .direct_strv_not_null             = TRUE,);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

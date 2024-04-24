@@ -7888,7 +7888,16 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
         .property_type =                &_pt_gobject_int,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SPLIT_EXCLUDES,
-        .property_type = &_pt_gobject_string,
+        .property_alias =               "split-exludes",
+        .is_cli_option =                TRUE,
+        .property_type =                &_pt_multilist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (multilist,
+                .get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingVpn, nm_setting_vpn_get_split_excludes_items),
+                .strsplit_plain =       TRUE,
+            ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV4,
+        ),
     ),
     NULL
 };

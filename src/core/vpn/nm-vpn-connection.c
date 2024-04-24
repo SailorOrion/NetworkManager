@@ -679,12 +679,14 @@ _get_vpn_timeout(NMVpnConnection *self)
 
 
 /* TODO TESTS */
+/*
 static void
 _create_routing_config_for_split_exclues(NMVpnConnection *self)
 {
-    NMSettingVpn *s_vpn;
-    GPtrArray *split_excludes
-
+    const GPtrArray *split_excludes;
+    int table_index = 100;
+    int rule_index = 100;
+    NMPlatformIPXRoute r;
 
     s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
     // TODO - What happens if this fails
@@ -694,16 +696,6 @@ _create_routing_config_for_split_exclues(NMVpnConnection *self)
     if (split_excludes == NULL)
         return;
 
-    int table_index = 100;
-    int rule_index = 100;
-    /* We've got split excludes, do the following:
-    - Create new route table (id could be name of vpn?)
-    - Add default route to vpn into that route table
-    - Add a routing rule at 100(?) for each entry in split excludes to go to 100+2
-    - Add a routing rule at 101 to lookup in the table created above
-    - Add a routing rule at 102 to do nothing
-    Crude Example: */
-    NMPlatformIPXRoute r;
     r.r4.table_coerced = table_index;
     // default route
     NMPlatformRoutingRule rule_exclude;
@@ -719,7 +711,7 @@ _create_routing_config_for_split_exclues(NMVpnConnection *self)
     rule.priority = rule_index + 2;
     rule.action = FR_ACT_NOP;
 }
-
+*/
 
 /*****************************************************************************/
 

@@ -3216,6 +3216,7 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
             PARSE_INFO_PROPERTY(NM_SETTING_VPN_PERSISTENT, .parser_no_check_key = TRUE, ),
             PARSE_INFO_PROPERTY(NM_SETTING_VPN_SECRETS, .parser_no_check_key = TRUE, ),
             PARSE_INFO_PROPERTY(NM_SETTING_VPN_SERVICE_TYPE, .parser_no_check_key = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_VPN_SPLIT_EXCLUDES, .parser_no_check_key = TRUE, ),
             PARSE_INFO_PROPERTY(NM_SETTING_VPN_TIMEOUT, .parser_no_check_key = TRUE, ),
             PARSE_INFO_PROPERTY(NM_SETTING_VPN_USER_NAME, .parser_no_check_key = TRUE, ), ), ),
     PARSE_INFO_SETTING(
