@@ -1011,8 +1011,8 @@ vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     return g_variant_builder_end(&builder);
 }
 
-static GVariant *
-_nm_split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
+GVariant *
+_nm_setting_vpn_split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
 	const char *const *split_excludes;
 
 	split_excludes = nm_setting_vpn_get_split_excludes(NM_SETTING_VPN(setting));
@@ -1020,8 +1020,8 @@ _nm_split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
 	return g_variant_new_strv(split_excludes, -1);
 }
 
-static gboolean
-_nm_split_excludes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil) {
+gboolean
+_nm_setting_vpn_split_excludes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil) {
     const gchar **split_excludes;
 
     split_excludes = g_variant_get_strv(value, NULL);
@@ -1290,8 +1290,8 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
                                        .direct_type   = NM_VALUE_TYPE_STRV,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_direct,
-                                       .to_dbus_fcn   = _nm_split_excludes_to_dbus,
-                                       .from_dbus_fcn = _nm_split_excludes_from_dbus, ),
+                                       .to_dbus_fcn   = _nm_setting_vpn_split_excludes_to_dbus,
+                                       .from_dbus_fcn = _nm_setting_vpn_split_excludes_from_dbus, ),
         NMSettingVpnPrivate,
         split_excludes,
         .direct_strv_not_null             = TRUE,);
