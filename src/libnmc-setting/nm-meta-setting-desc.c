@@ -7893,6 +7893,8 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
         .property_type =                &_pt_multilist,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (multilist,
+                .add_fcn       = MULTILIST_ADD_FCN (NMSettingVpn, nm_setting_vpn_add_split_exclude),
+                .remove_by_value_fcn = MULTILIST_REMOVE_BY_VALUE_FCN(NMSettingVpn, nm_setting_vpn_remove_split_exclude),
                 .get_num_fcn_u =        MULTILIST_GET_NUM_FCN_U       (NMSettingVpn, nm_setting_vpn_get_split_excludes_items),
                 .strsplit_plain =       TRUE,
             ),
