@@ -582,7 +582,6 @@ gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *ite
         return nm_setting_vpn_remove_split_exclude(setting, item);
     }
 
-
     if (!nm_strvarray_ensure_and_add_unique(&priv->split_excludes.arr, item)) 
         return FALSE;
 

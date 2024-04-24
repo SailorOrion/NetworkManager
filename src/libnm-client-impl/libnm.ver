@@ -1989,6 +1989,8 @@ global:
 	nm_setting_vpn_get_split_excludes;
 	nm_setting_vpn_get_split_excludes_item;
 	nm_setting_vpn_get_split_excludes_items;
+	nm_setting_vpn_add_split_exclude;
+	nm_setting_vpn_remove_split_exclude;
 	nm_setting_wired_add_mac_denylist_item;
 	nm_setting_wired_clear_mac_denylist_items;
 	nm_setting_wired_get_mac_address_denylist;
