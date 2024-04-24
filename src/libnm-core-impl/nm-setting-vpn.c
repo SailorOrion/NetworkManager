@@ -551,6 +551,45 @@ nm_setting_vpn_get_split_excludes(NMSettingVpn *setting)
     return nm_strvarray_get_strv_notnull(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr, NULL);
 }
 
+gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *item)
+{
+    NMSettingVpnPrivate      *priv;
+    // TODO - code duplication?
+    g_return_val_if_fail(NM_IS_SETTING_VPN(setting), FALSE);
+    g_return_val_if_fail(item != NULL, FALSE);
+    g_return_val_if_fail(item[0] != '\0', FALSE);
+
+    priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+    if (!nm_strvarray_remove_first(priv->split_excludes.arr, item)) 
+        return FALSE;
+
+    _notify(setting, PROP_DATA);
+    return TRUE;
+}
+
+/// @brief 
+/// @param setting 
+/// @param item 
+gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *item)
+{
+    NMSettingVpnPrivate      *priv;
+    g_return_val_if_fail(NM_IS_SETTING_VPN(setting), FALSE);
+    g_return_val_if_fail(item != NULL, FALSE);
+    g_return_val_if_fail(item[0] != '\0', FALSE);
+
+    priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+    if (!item) {
+        return nm_setting_vpn_remove_split_exclude(setting, item);
+    }
+
+
+    if (!nm_strvarray_ensure_and_add_unique(&priv->split_excludes.arr, item)) 
+        return FALSE;
+
+    _notify(setting, PROP_DATA);
+    return TRUE;
+}
+
 /**
  * nm_setting_vpn_get_split_excludes_items:
  * @setting: the #NMSettingVpn

@@ -56,6 +56,10 @@ const char *const * nm_setting_vpn_get_split_excludes(NMSettingVpn *setting);
 NM_AVAILABLE_IN_1_48
 const char *nm_setting_vpn_get_split_excludes_item(NMSettingVpn *setting, guint idx);
 NM_AVAILABLE_IN_1_48
+gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *item);
+NM_AVAILABLE_IN_1_48
+gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *item);
+NM_AVAILABLE_IN_1_48
 guint nm_setting_vpn_get_split_excludes_items(NMSettingVpn *setting);
 
 NM_AVAILABLE_IN_1_42
