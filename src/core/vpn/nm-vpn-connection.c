@@ -703,19 +703,29 @@ _create_routing_config_for_split_excludes(NMVpnConnection *self)
 
     //r.r4.table_coerced = table_index;
     // default route
-    NMPlatformRoutingRule rule_exclude;
-    NMPlatformRoutingRule rule_goto;
-    NMPlatformRoutingRule rule_nop;
+    NMPlatformRoutingRule rule_exclude = {};
+    NMPlatformRoutingRule rule_goto = {};
+    NMPlatformRoutingRule rule_nop = {};
+
+    NMIPAddr addr;
+
+    inet_pton(AF_INET, "8.8.8.8", &addr)    ;
 
     _LOGD("HERE!!!!");
     rule_exclude.priority = rule_index;
+    rule_exclude.dst = addr;
+    rule_exclude.dst_len = 32;
     rule_exclude.action = FR_ACT_GOTO;
+    rule_exclude.addr_family = AF_INET;
+    rule_exclude.goto_target = rule_index + 2;
     //rule.? target? is that flow? or table?
     rule_goto.priority = rule_index + 1;
     rule_goto.action = FR_ACT_TO_TBL;
+    rule_goto.addr_family = AF_INET;
     rule_goto.table = table_index;
 
     rule_nop.priority = rule_index + 2;
+    rule_nop.addr_family = AF_INET;
     rule_nop.action = FR_ACT_NOP;
     nmp_global_tracker_track_rule(tracker,
                                 &rule_exclude,
