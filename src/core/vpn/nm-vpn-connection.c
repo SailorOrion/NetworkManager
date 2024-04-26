@@ -16,12 +16,14 @@
 #include <sys/socket.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <linux/fib_rules.h>
 
 #include "NetworkManagerUtils.h"
 #include "dns/nm-dns-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-global-tracker.h"
 #include "libnm-std-aux/unaligned.h"
 #include "nm-active-connection.h"
 #include "nm-config.h"
@@ -679,39 +681,58 @@ _get_vpn_timeout(NMVpnConnection *self)
 
 
 /* TODO TESTS */
-/*
 static void
-_create_routing_config_for_split_exclues(NMVpnConnection *self)
+_create_routing_config_for_split_excludes(NMVpnConnection *self)
 {
-    const GPtrArray *split_excludes;
+    //NMValueStrv split_excludes;
     int table_index = 100;
     int rule_index = 100;
-    NMPlatformIPXRoute r;
+    //NMPlatformIPXRoute r;
 
-    s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
+    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMPGlobalTracker *tracker = nm_netns_get_global_tracker(priv->netns);
+
+    //NMSettingVpn *s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
+    gpointer user_tag=&priv->ip_data_4;
     // TODO - What happens if this fails
 
-    split_excludes = nm_setting_vpn_get_split_excludes(s_vpn);
+    //split_excludes = nm_setting_vpn_get_split_excludes(s_vpn);
 
-    if (split_excludes == NULL)
-        return;
+    //if (split_excludes == NULL)
+    //    return;
 
-    r.r4.table_coerced = table_index;
+    //r.r4.table_coerced = table_index;
     // default route
     NMPlatformRoutingRule rule_exclude;
-    rule.priority = rule_index;
-    rule.action = FR_ACT_GOTO;
-    //rule.? target? is that flow? or table?
     NMPlatformRoutingRule rule_goto;
-    rule.priority = rule_index + 1;
-    rule.action = FR_ACT_TO_TBL;
-    rule.table = table_index;
-
     NMPlatformRoutingRule rule_nop;
-    rule.priority = rule_index + 2;
-    rule.action = FR_ACT_NOP;
+
+    _LOGD("HERE!!!!");
+    rule_exclude.priority = rule_index;
+    rule_exclude.action = FR_ACT_GOTO;
+    //rule.? target? is that flow? or table?
+    rule_goto.priority = rule_index + 1;
+    rule_goto.action = FR_ACT_TO_TBL;
+    rule_goto.table = table_index;
+
+    rule_nop.priority = rule_index + 2;
+    rule_nop.action = FR_ACT_NOP;
+    nmp_global_tracker_track_rule(tracker,
+                                &rule_exclude,
+                                10,
+                                user_tag,
+                                NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+    nmp_global_tracker_track_rule(tracker,
+                                &rule_goto,
+                                10,
+                                user_tag,
+                                NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+    nmp_global_tracker_track_rule(tracker,
+                                &rule_nop,
+                                10,
+                                user_tag,
+                                NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
 }
-*/
 
 /*****************************************************************************/
 
@@ -727,7 +748,7 @@ _l3cfg_l3cd_set(NMVpnConnection *self, L3CDType l3cd_type, const NML3ConfigData 
         if (l3cd) {
             char s_name[150];
 
-            /* Seal hear, so that we don't log about an unsealed instance.
+            /* Seal here, so that we don't log about an unsealed instance.
              * nm_l3_config_data_reset() anyway seals the instance too. */
             nm_l3_config_data_seal(l3cd);
 
@@ -1406,6 +1427,7 @@ _apply_config(NMVpnConnection *self)
 
     priv->wait_for_pre_up_state = TRUE;
 
+    _create_routing_config_for_split_excludes(self);
     _l3cfg_l3cd_update_all(self);
 }
 
