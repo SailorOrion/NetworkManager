@@ -685,6 +685,7 @@ _get_vpn_timeout(NMVpnConnection *self)
 
 /* TODO
     - Tests!
+    - somehow determine the index so that we don't overwrite them
 */
 static void
 _create_routing_rules_for_split_excludes(NMVpnConnection *self)
@@ -697,16 +698,33 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
     NMPlatformRoutingRule rule_goto = {};
     NMPlatformRoutingRule rule_nop = {};
 
+    NMVpnConnectionPrivate *priv;
+    NMPGlobalTracker *tracker;
+    NMSettingVpn *s_vpn;
+    gpointer user_tag;
 
-    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    NMPGlobalTracker *tracker = nm_netns_get_global_tracker(priv->netns);
+    g_return_if_fail(NM_IS_VPN_CONNECTION(self));
 
-    NMSettingVpn *s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
-    gpointer user_tag=&priv->ip_data_4;
-    // TODO - What happens if this fails
+    s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
+    g_return_if_fail(s_vpn);
+
+    priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    tracker = nm_netns_get_global_tracker(priv->netns);
+    user_tag=&priv->ip_data_4;
+
+    _LOGD("HERE!");
+
+    /* This is to ensure that the routing configuration exhibits unchanged behaviour when no
+    split excludes are set. In theory, this shouldn't not even be necessary and we could use
+    the rule-based configuration in any case, but at the moment, I'd rather not change the existing
+    behaviour, not least to not confuse the user with a completely new routing setup
+    */
+    if (num_excludes == 0) {
+        priv->route_table_for_default = 0;
+        return;
+    }
 
     split_excludes = nm_setting_vpn_get_split_excludes(s_vpn, &num_excludes);
-    _LOGD("HERE!!!!");
     for (int i = 0; i < num_excludes; i++) {
         NMPlatformRoutingRule rule_exclude = {};
         NMIPAddr addr;
@@ -722,11 +740,6 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
                                     10,
                                     user_tag,
                                     NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
-    }
-
-    if (num_excludes == 0) {
-        priv->route_table_for_default = 0;
-        return;
     }
 
 
