@@ -186,6 +186,9 @@ typedef struct {
 
     guint32 mtu;
 
+    // TODO - is this the correct place?
+    guint32 route_table_for_default;
+
     bool wait_for_pre_up_state : 1;
 
     bool dbus_service_started : 1;
@@ -680,58 +683,64 @@ _get_vpn_timeout(NMVpnConnection *self)
 }
 
 
-/* TODO TESTS */
+/* TODO
+    - Tests!
+*/
 static void
-_create_routing_config_for_split_excludes(NMVpnConnection *self)
+_create_routing_rules_for_split_excludes(NMVpnConnection *self)
 {
-    //NMValueStrv split_excludes;
-    int table_index = 100;
-    int rule_index = 100;
-    //NMPlatformIPXRoute r;
+    const char* const* split_excludes;
+    guint32 table_index = 100;
+    guint32 rule_index = 100;
+    guint num_excludes;
+
+    NMPlatformRoutingRule rule_goto = {};
+    NMPlatformRoutingRule rule_nop = {};
+
 
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     NMPGlobalTracker *tracker = nm_netns_get_global_tracker(priv->netns);
 
-    //NMSettingVpn *s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
+    NMSettingVpn *s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
     gpointer user_tag=&priv->ip_data_4;
     // TODO - What happens if this fails
 
-    //split_excludes = nm_setting_vpn_get_split_excludes(s_vpn);
-
-    //if (split_excludes == NULL)
-    //    return;
-
-    //r.r4.table_coerced = table_index;
-    // default route
-    NMPlatformRoutingRule rule_exclude = {};
-    NMPlatformRoutingRule rule_goto = {};
-    NMPlatformRoutingRule rule_nop = {};
-
-    NMIPAddr addr;
-
-    inet_pton(AF_INET, "8.8.8.8", &addr)    ;
-
+    split_excludes = nm_setting_vpn_get_split_excludes(s_vpn, &num_excludes);
     _LOGD("HERE!!!!");
-    rule_exclude.priority = rule_index;
-    rule_exclude.dst = addr;
-    rule_exclude.dst_len = 32;
-    rule_exclude.action = FR_ACT_GOTO;
-    rule_exclude.addr_family = AF_INET;
-    rule_exclude.goto_target = rule_index + 2;
-    //rule.? target? is that flow? or table?
+    for (int i = 0; i < num_excludes; i++) {
+        NMPlatformRoutingRule rule_exclude = {};
+        NMIPAddr addr;
+        inet_pton(AF_INET, split_excludes[i], &addr)    ;
+        rule_exclude.priority = rule_index;
+        rule_exclude.dst = addr;
+        rule_exclude.dst_len = 32;
+        rule_exclude.action = FR_ACT_GOTO;
+        rule_exclude.addr_family = AF_INET;
+        rule_exclude.goto_target = rule_index + 2;
+        nmp_global_tracker_track_rule(tracker,
+                                    &rule_exclude,
+                                    10,
+                                    user_tag,
+                                    NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+    }
+
+    if (num_excludes == 0) {
+        priv->route_table_for_default = 0;
+        return;
+    }
+
+
+
     rule_goto.priority = rule_index + 1;
     rule_goto.action = FR_ACT_TO_TBL;
     rule_goto.addr_family = AF_INET;
     rule_goto.table = table_index;
 
+    priv->route_table_for_default = table_index;
+
     rule_nop.priority = rule_index + 2;
     rule_nop.addr_family = AF_INET;
     rule_nop.action = FR_ACT_NOP;
-    nmp_global_tracker_track_rule(tracker,
-                                &rule_exclude,
-                                10,
-                                user_tag,
-                                NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
     nmp_global_tracker_track_rule(tracker,
                                 &rule_goto,
                                 10,
@@ -1437,7 +1446,6 @@ _apply_config(NMVpnConnection *self)
 
     priv->wait_for_pre_up_state = TRUE;
 
-    _create_routing_config_for_split_excludes(self);
     _l3cfg_l3cd_update_all(self);
 }
 
@@ -1502,6 +1510,8 @@ _check_complete(NMVpnConnection *self, gboolean success)
                                                  nm_vpn_connection_get_ip_ifindex(self, TRUE),
                                                  connection);
     _l3cfg_l3cd_set(self, L3CD_TYPE_STATIC, l3cd);
+
+    //_create_routing_rules_for_split_excludes(self);
 
     _l3cfg_l3cd_gw_extern_update(self);
 
@@ -1914,6 +1924,9 @@ _config_process_generic(NMVpnConnection *self, GVariant *dict)
     else
         priv->mtu = 0;
 
+
+    priv->route_table_for_default = 0;
+
     priv->generic_config_received = TRUE;
 
     nm_g_object_thaw_notify_clear(&self_thaw);
@@ -2305,14 +2318,18 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
         NMPlatformIPXRoute route;
 
         if (IS_IPv4) {
+            _create_routing_rules_for_split_excludes(self);
             route.r4 = (NMPlatformIP4Route){
                 .ifindex    = ip_ifindex,
                 .rt_source  = NM_IP_CONFIG_SOURCE_VPN,
                 .gateway    = priv->ip_data_4.gw_internal.addr4,
-                .table_any  = TRUE,
                 .metric_any = TRUE,
                 .mss        = mss,
             };
+            route.r4.table_any = (priv->route_table_for_default == 0);
+            // TODO is the call really required?
+            if (priv->route_table_for_default > 0)
+                route.r4.table_coerced = nm_platform_route_table_coerce(priv->route_table_for_default);
         } else {
             route.r6 = (NMPlatformIP6Route){
                 .ifindex    = ip_ifindex,

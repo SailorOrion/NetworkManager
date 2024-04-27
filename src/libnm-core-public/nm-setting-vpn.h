@@ -52,7 +52,7 @@ const char *nm_setting_vpn_get_service_type(NMSettingVpn *setting);
 const char *nm_setting_vpn_get_user_name(NMSettingVpn *setting);
 
 NM_AVAILABLE_IN_1_48
-const char *const * nm_setting_vpn_get_split_excludes(NMSettingVpn *setting);
+const char *const * nm_setting_vpn_get_split_excludes(NMSettingVpn *setting, guint *num_excludes);
 NM_AVAILABLE_IN_1_48
 const char *nm_setting_vpn_get_split_excludes_item(NMSettingVpn *setting, guint idx);
 NM_AVAILABLE_IN_1_48

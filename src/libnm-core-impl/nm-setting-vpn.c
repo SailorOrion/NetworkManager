@@ -544,11 +544,11 @@ nm_setting_vpn_get_timeout(NMSettingVpn *setting)
  * Since: 1.48
  **/
 const char *const *
-nm_setting_vpn_get_split_excludes(NMSettingVpn *setting)
+nm_setting_vpn_get_split_excludes(NMSettingVpn *setting, guint *num_excludes)
 {
     g_return_val_if_fail(NM_IS_SETTING_VPN(setting), 0);
 
-    return nm_strvarray_get_strv_notnull(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr, NULL);
+    return nm_strvarray_get_strv_notnull(NM_SETTING_VPN_GET_PRIVATE(setting)->split_excludes.arr, num_excludes);
 }
 
 gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *item)
@@ -1053,7 +1053,7 @@ GVariant *
 _nm_setting_vpn_split_excludes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil) {
 	const char *const *split_excludes;
 
-	split_excludes = nm_setting_vpn_get_split_excludes(NM_SETTING_VPN(setting));
+	split_excludes = nm_setting_vpn_get_split_excludes(NM_SETTING_VPN(setting), NULL);
 
 	return g_variant_new_strv(split_excludes, -1);
 }
