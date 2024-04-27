@@ -737,7 +737,7 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
         rule_exclude.goto_target = rule_index + 2;
         nmp_global_tracker_track_rule(tracker,
                                     &rule_exclude,
-                                    10,
+                                    20,
                                     user_tag,
                                     NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
     }
@@ -756,12 +756,12 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
     rule_nop.action = FR_ACT_NOP;
     nmp_global_tracker_track_rule(tracker,
                                 &rule_goto,
-                                10,
+                                20,
                                 user_tag,
                                 NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
     nmp_global_tracker_track_rule(tracker,
                                 &rule_nop,
-                                10,
+                                20,
                                 user_tag,
                                 NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
 }
@@ -994,6 +994,9 @@ fw_call_cleanup(NMVpnConnection *self)
 static void
 vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 {
+    NMVpnConnectionPrivate *priv;
+    NMPGlobalTracker *tracker;
+    gpointer user_tag;
     const char *iface;
 
     /* Remove zone from firewall */
@@ -1004,6 +1007,12 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 
     /* Cancel pending firewall call */
     fw_call_cleanup(self);
+
+    priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    tracker = nm_netns_get_global_tracker(priv->netns);
+    user_tag=&priv->ip_data_4;
+
+    nmp_global_tracker_untrack_all(tracker, user_tag, TRUE, FALSE);
 
     _l3cfg_l3cd_clear_all(self);
 }
