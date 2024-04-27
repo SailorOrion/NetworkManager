@@ -1012,6 +1012,8 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
     tracker = nm_netns_get_global_tracker(priv->netns);
     user_tag=&priv->ip_data_4;
 
+    // TODO: What happens if the VPN connection dies? Will this be called?
+    // TODO: Are the flags correct?
     nmp_global_tracker_untrack_all(tracker, user_tag, TRUE, FALSE);
 
     _l3cfg_l3cd_clear_all(self);
