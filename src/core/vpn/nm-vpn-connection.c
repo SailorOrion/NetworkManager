@@ -712,6 +712,8 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
     tracker  = nm_netns_get_global_tracker(priv->netns);
     user_tag = &priv->ip_data_4; /* TODO is this a good tag? */
 
+    split_excludes = nm_setting_vpn_get_split_excludes(s_vpn, &num_excludes);
+
     /* This is to ensure that the routing configuration exhibits unchanged behaviour when no
     split excludes are set. In theory, this shouldn't not even be necessary and we could use
     the rule-based configuration in any case, but at the moment, I'd rather not change the existing
@@ -723,7 +725,6 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
         return;
     }
 
-    split_excludes = nm_setting_vpn_get_split_excludes(s_vpn, &num_excludes);
     for (int i = 0; i < num_excludes; i++) {
         const char            *delim;
         NMIPAddr              addr;
