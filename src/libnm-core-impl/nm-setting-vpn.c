@@ -563,13 +563,19 @@ gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *
     if (!nm_strvarray_remove_first(priv->split_excludes.arr, item)) 
         return FALSE;
 
-    _notify(setting, PROP_DATA);
+    _notify(setting, PROP_SPLIT_EXCLUDES);
     return TRUE;
 }
 
-/// @brief 
-/// @param setting 
-/// @param item 
+/** @brief Adds a single split exclude
+ *  @param setting the #NMSettingVpn
+ *  @param item string containing the ip[/prefix] that is to be excluded
+ *  @todo - what happens if 'neverdefault' is set
+ *  @todo - what happens if ipv4.routes has the split exclude set as route?
+ * 
+ * Since: 1.48
+ **/
+
 gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *item)
 {
     NMSettingVpnPrivate *priv;
@@ -580,6 +586,7 @@ gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *ite
     g_return_val_if_fail(NM_IS_SETTING_VPN(setting), FALSE);
     g_return_val_if_fail(item != NULL, FALSE);
     g_return_val_if_fail(item[0] != '\0', FALSE);
+
 
     priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     if (!item) {
@@ -605,7 +612,7 @@ gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *ite
     if (!nm_strvarray_ensure_and_add_unique(&priv->split_excludes.arr, item)) 
         return FALSE;
 
-    _notify(setting, PROP_DATA);
+    _notify(setting, PROP_SPLIT_EXCLUDES);
     return TRUE;
 }
 
