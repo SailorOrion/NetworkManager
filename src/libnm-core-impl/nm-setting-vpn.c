@@ -572,7 +572,11 @@ gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *
 /// @param item 
 gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *item)
 {
-    NMSettingVpnPrivate      *priv;
+    NMSettingVpnPrivate *priv;
+    const char          *delim;
+    const char          *addr = item;
+    gs_free char        *tmp = NULL;
+
     g_return_val_if_fail(NM_IS_SETTING_VPN(setting), FALSE);
     g_return_val_if_fail(item != NULL, FALSE);
     g_return_val_if_fail(item[0] != '\0', FALSE);
@@ -580,6 +584,22 @@ gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *ite
     priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     if (!item) {
         return nm_setting_vpn_remove_split_exclude(setting, item);
+    }
+
+    delim = strchr(item, '/');
+    if (delim) {
+        // TODO - assert that str-addr is < 200
+        addr = nm_strndup_a(200, addr, delim-addr, &tmp);
+        ++delim;
+        if (_nm_utils_ascii_str_to_int64(delim, 10, 0, 32, -1) < 0) {
+            // TODO - what to do?
+            g_set_error(NULL, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED, _("invalid prefix %s"), delim);
+            return FALSE;
+        }
+    }
+    if (!nm_inet_is_valid(AF_INET, addr)) {
+        g_set_error(NULL, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED, _("'%s' is not a valid IPv4 address"), item);
+        return FALSE;
     }
 
     if (!nm_strvarray_ensure_and_add_unique(&priv->split_excludes.arr, item)) 
