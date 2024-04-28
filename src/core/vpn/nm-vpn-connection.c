@@ -708,14 +708,15 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
     s_vpn = nm_connection_get_setting_vpn(_get_applied_connection(self));
     g_return_if_fail(s_vpn);
 
-    priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    tracker = nm_netns_get_global_tracker(priv->netns);
-    user_tag=&priv->ip_data_4;
+    priv     = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    tracker  = nm_netns_get_global_tracker(priv->netns);
+    user_tag = &priv->ip_data_4; /* TODO is this a good tag? */
 
     /* This is to ensure that the routing configuration exhibits unchanged behaviour when no
     split excludes are set. In theory, this shouldn't not even be necessary and we could use
     the rule-based configuration in any case, but at the moment, I'd rather not change the existing
-    behaviour, not least to not confuse the user with a completely new routing setup
+    behaviour, not least to not confuse the user with a completely new routing setup.
+    However, if we want to exclude captive portals from the vpn connection, this might be a good place.
     */
     if (num_excludes == 0) {
         priv->route_table_for_default = 0;
@@ -728,20 +729,20 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
         NMIPAddr              addr;
 
         NMPlatformRoutingRule rule_exclude = {};
-        gs_free char          *tmp = NULL;
-        const char            *addr_str = split_excludes[i];
-        guint8                prefix = 32;
+        gs_free char          *tmp         = NULL;
+        const char            *addr_str    = split_excludes[i];
+        guint8                prefix       = 32;
 
         delim = strchr(addr_str, '/');
         if (delim) {
             addr_str = nm_strndup_a(20, addr_str, delim-addr_str, &tmp);
-            prefix = _nm_utils_ascii_str_to_uint64(++delim, 10, 0, 32, 255);
+            prefix   = _nm_utils_ascii_str_to_uint64(++delim, 10, 0, 32, 255);
         }
 
-        _LOGD("HERE: prefix: %d", prefix);
-        _LOGD("HERE: Address: %s", addr_str);
-
-        inet_pton(AF_INET, addr_str, &addr)    ;
+        inet_pton(AF_INET, addr_str, &addr);
+        /* TODO - man ip_rule(8) states: "Each rule should have an explicitly set unique priority value."
+        Should we honor that request?
+        */
         rule_exclude.priority = rule_index;
         rule_exclude.dst = addr;
         rule_exclude.dst_len = prefix;
@@ -754,8 +755,6 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
                                     user_tag,
                                     NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
     }
-
-
 
     rule_goto.priority = rule_index + 1;
     rule_goto.action = FR_ACT_TO_TBL;

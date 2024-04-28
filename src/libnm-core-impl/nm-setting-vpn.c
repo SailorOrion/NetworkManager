@@ -588,16 +588,16 @@ gboolean nm_setting_vpn_add_split_exclude(NMSettingVpn *setting, const char *ite
 
     delim = strchr(item, '/');
     if (delim) {
-        // TODO - assert that str-addr is < 200
-        addr = nm_strndup_a(200, addr, delim-addr, &tmp);
-        ++delim;
-        if (_nm_utils_ascii_str_to_int64(delim, 10, 0, 32, -1) < 0) {
-            // TODO - what to do?
+        /* For IPv6, use INET6_ADDRSTRLEN + 4 */
+        addr = nm_strndup_a(INET_ADDRSTRLEN + 3, addr, delim-addr, &tmp);
+        if (_nm_utils_ascii_str_to_int64(++delim, 10, 0, 32, -1) < 0) {
+            // TODO - how do we actually raise the error
             g_set_error(NULL, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED, _("invalid prefix %s"), delim);
             return FALSE;
         }
     }
     if (!nm_inet_is_valid(AF_INET, addr)) {
+        // TODO - how do we actually raise the error
         g_set_error(NULL, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED, _("'%s' is not a valid IPv4 address"), item);
         return FALSE;
     }
