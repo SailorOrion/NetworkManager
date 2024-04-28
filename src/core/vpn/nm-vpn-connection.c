@@ -712,8 +712,6 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
     tracker = nm_netns_get_global_tracker(priv->netns);
     user_tag=&priv->ip_data_4;
 
-    _LOGD("HERE!");
-
     /* This is to ensure that the routing configuration exhibits unchanged behaviour when no
     split excludes are set. In theory, this shouldn't not even be necessary and we could use
     the rule-based configuration in any case, but at the moment, I'd rather not change the existing
@@ -726,12 +724,27 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
 
     split_excludes = nm_setting_vpn_get_split_excludes(s_vpn, &num_excludes);
     for (int i = 0; i < num_excludes; i++) {
+        const char            *delim;
+        NMIPAddr              addr;
+
         NMPlatformRoutingRule rule_exclude = {};
-        NMIPAddr addr;
-        inet_pton(AF_INET, split_excludes[i], &addr)    ;
+        gs_free char          *tmp = NULL;
+        const char            *addr_str = split_excludes[i];
+        guint8                prefix = 32;
+
+        delim = strchr(addr_str, '/');
+        if (delim) {
+            addr_str = nm_strndup_a(20, addr_str, delim-addr_str, &tmp);
+            prefix = _nm_utils_ascii_str_to_uint64(++delim, 10, 0, 32, 255);
+        }
+
+        _LOGD("HERE: prefix: %d", prefix);
+        _LOGD("HERE: Address: %s", addr_str);
+
+        inet_pton(AF_INET, addr_str, &addr)    ;
         rule_exclude.priority = rule_index;
         rule_exclude.dst = addr;
-        rule_exclude.dst_len = 32;
+        rule_exclude.dst_len = prefix;
         rule_exclude.action = FR_ACT_GOTO;
         rule_exclude.addr_family = AF_INET;
         rule_exclude.goto_target = rule_index + 2;
