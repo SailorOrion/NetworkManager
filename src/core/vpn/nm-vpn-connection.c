@@ -690,18 +690,17 @@ _get_vpn_timeout(NMVpnConnection *self)
 static void
 _create_routing_rules_for_split_excludes(NMVpnConnection *self)
 {
-    const char* const* split_excludes;
-    guint32 table_index = 100;
-    guint32 rule_index = 100;
-    guint num_excludes;
+    const char* const      *split_excludes;
+    guint                   num_excludes;
+    NMVpnConnectionPrivate *priv;
+    NMPGlobalTracker       *tracker;
+    NMSettingVpn           *s_vpn;
+    gpointer                user_tag;
 
     NMPlatformRoutingRule rule_goto = {};
-    NMPlatformRoutingRule rule_nop = {};
-
-    NMVpnConnectionPrivate *priv;
-    NMPGlobalTracker *tracker;
-    NMSettingVpn *s_vpn;
-    gpointer user_tag;
+    NMPlatformRoutingRule rule_nop  = {};
+    guint32 table_index             = 100;
+    guint32 rule_index              = 100;
 
     g_return_if_fail(NM_IS_VPN_CONNECTION(self));
 
@@ -744,10 +743,10 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
         /* TODO - man ip_rule(8) states: "Each rule should have an explicitly set unique priority value."
         Should we honor that request?
         */
-        rule_exclude.priority = rule_index;
-        rule_exclude.dst = addr;
-        rule_exclude.dst_len = prefix;
-        rule_exclude.action = FR_ACT_GOTO;
+        rule_exclude.priority    = rule_index;
+        rule_exclude.dst         = addr;
+        rule_exclude.dst_len     = prefix;
+        rule_exclude.action      = FR_ACT_GOTO;
         rule_exclude.addr_family = AF_INET;
         rule_exclude.goto_target = rule_index + 2;
         nmp_global_tracker_track_rule(tracker,
@@ -757,16 +756,16 @@ _create_routing_rules_for_split_excludes(NMVpnConnection *self)
                                     NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
     }
 
-    rule_goto.priority = rule_index + 1;
-    rule_goto.action = FR_ACT_TO_TBL;
+    rule_goto.priority    = rule_index + 1;
+    rule_goto.action      = FR_ACT_TO_TBL;
     rule_goto.addr_family = AF_INET;
-    rule_goto.table = table_index;
+    rule_goto.table       = table_index;
 
     priv->route_table_for_default = table_index;
 
-    rule_nop.priority = rule_index + 2;
+    rule_nop.priority    = rule_index + 2;
     rule_nop.addr_family = AF_INET;
-    rule_nop.action = FR_ACT_NOP;
+    rule_nop.action      = FR_ACT_NOP;
     nmp_global_tracker_track_rule(tracker,
                                 &rule_goto,
                                 20,
@@ -2355,6 +2354,9 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
         NMPlatformIPXRoute route;
 
         if (IS_IPv4) {
+            /* If we want to exclude certain IP ranges from being routed into the VPN,
+             * move the default route into a separate routing table and add routing rules
+             * to bypass that routing table for those IP ranges */
             _create_routing_rules_for_split_excludes(self);
             route.r4 = (NMPlatformIP4Route){
                 .ifindex    = ip_ifindex,

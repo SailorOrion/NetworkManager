@@ -572,6 +572,7 @@ gboolean nm_setting_vpn_remove_split_exclude(NMSettingVpn *setting, const char *
  *  @param item string containing the ip[/prefix] that is to be excluded
  *  @todo - what happens if 'neverdefault' is set
  *  @todo - what happens if ipv4.routes has the split exclude set as route?
+ *  @todo - IPv6
  * 
  * Since: 1.48
  **/
