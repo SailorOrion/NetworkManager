@@ -7888,7 +7888,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
         .property_type =                &_pt_gobject_int,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_SPLIT_EXCLUDES,
-        .property_alias =               "split-exludes",
+        .property_alias =               "split-excludes",
         .is_cli_option =                TRUE,
         .property_type =                &_pt_multilist,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
