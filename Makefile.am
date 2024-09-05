@@ -157,8 +157,10 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-udev-dir=$$dc_install_base/lib/udev \
 	--with-wext=no \
 	--enable-ifcfg-rh \
+	--with-dhclient=yes \
 	--enable-ifupdown \
 	--disable-dependency-tracking \
+	--disable-autotools-deprecation \
 	$(NULL)
 
 dist-configure-check:
@@ -3438,10 +3440,10 @@ EXTRA_DIST += \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_New_Wireless_Group_Names \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_1 \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_2 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_1 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_2 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_3 \
-	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_4 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_1 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_2 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_3 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_port_4 \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Setting \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Flags \
 	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_ID_UUID \
@@ -3601,13 +3603,13 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection_2.cexpected \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-slave-enp31s0f1-142.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-port-enp31s0f1-142.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port-bond0 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port-ib \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-missing-stp \
@@ -3646,9 +3648,9 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write-empty.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write.cexpected \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-1 \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-2 \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-invalid \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-controller-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-controller-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-controller-invalid \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-1 \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-2 \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-empty-config \
@@ -5303,6 +5305,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-team-port.h \
 	src/nmtui/nmt-page-team.c \
 	src/nmtui/nmt-page-team.h \
+	src/nmtui/nmt-page-veth.c \
+	src/nmtui/nmt-page-veth.h \
 	src/nmtui/nmt-page-vlan.c \
 	src/nmtui/nmt-page-vlan.h \
 	src/nmtui/nmt-page-wifi.c \

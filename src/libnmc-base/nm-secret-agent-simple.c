@@ -431,7 +431,7 @@ add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
     const NmcVpnPasswordName *p;
     const char               *vpn_msg = NULL;
     char                    **iter;
-    char                     *secret_name;
+    char                     *ui_name;
     bool                      is_challenge = FALSE;
     bool                      force_echo;
 
@@ -442,19 +442,19 @@ add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
                 vpn_msg = &(*iter)[NM_STRLEN(NM_SECRET_TAG_VPN_MSG)];
             } else {
                 if (NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_DYNAMIC_CHALLENGE)) {
-                    secret_name  = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE)];
+                    ui_name      = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE)];
                     is_challenge = TRUE;
                     force_echo   = FALSE;
                 } else if (NM_STR_HAS_PREFIX(*iter, NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)) {
-                    secret_name  = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)];
+                    ui_name      = &(*iter)[NM_STRLEN(NM_SECRET_TAG_DYNAMIC_CHALLENGE_ECHO)];
                     is_challenge = TRUE;
                     force_echo   = TRUE;
                 } else {
-                    secret_name = *iter;
-                    force_echo  = FALSE;
+                    ui_name    = *iter;
+                    force_echo = FALSE;
                 }
 
-                add_vpn_secret_helper(secrets, s_vpn, secret_name, secret_name, force_echo);
+                add_vpn_secret_helper(secrets, s_vpn, *iter, ui_name, force_echo);
             }
         }
     }
@@ -907,9 +907,15 @@ request_secrets_from_ui(RequestData *request)
         ssid_utf8  = nm_utils_ssid_to_utf8(g_bytes_get_data(ssid, NULL), g_bytes_get_size(ssid));
 
         title = _("Authentication required by wireless network");
-        msg   = g_strdup_printf(
-            _("Passwords or encryption keys are required to access the wireless network '%s'."),
-            ssid_utf8);
+        if (request->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE) {
+            msg = g_strdup_printf(_("Push of the WPS button on the router or a password is "
+                                    "required to access the wireless network '%s'."),
+                                  ssid_utf8);
+        } else {
+            msg = g_strdup_printf(
+                _("Passwords or encryption keys are required to access the wireless network '%s'."),
+                ssid_utf8);
+        }
 
         if (!add_wireless_secrets(request, secrets))
             goto out_fail;

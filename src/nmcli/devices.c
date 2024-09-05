@@ -762,12 +762,12 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON       "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST "NAME," NMC_FIELDS_DEV_WIMAX_LIST_COMMON
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_master_prop[] = {
+const NmcMetaGenericInfo *const nmc_fields_dev_show_controller_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
     NMC_META_GENERIC("SLAVES"), /* 1 */
     NULL,
 };
-#define NMC_FIELDS_DEV_SHOW_MASTER_PROP_COMMON "NAME,SLAVES"
+#define NMC_FIELDS_DEV_SHOW_CONTROLLER_PROP_COMMON "NAME,SLAVES"
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_team_prop[] = {
     NMC_META_GENERIC("NAME"),   /* 0 */
@@ -802,18 +802,18 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
     NMC_META_GENERIC_WITH_NESTED("WIRED-PROPERTIES",
                                  metagen_device_detail_wired_properties), /* 5 */
     NMC_META_GENERIC_WITH_NESTED("WIMAX-PROPERTIES",
-                                 metagen_device_detail_wimax_properties),           /* 6 */
-    NMC_META_GENERIC_WITH_NESTED("NSP", nmc_fields_dev_wimax_list + 1),             /* 7 */
-    NMC_META_GENERIC_WITH_NESTED("IP4", metagen_ip4_config),                        /* 8 */
-    NMC_META_GENERIC_WITH_NESTED("DHCP4", metagen_dhcp_config),                     /* 9 */
-    NMC_META_GENERIC_WITH_NESTED("IP6", metagen_ip6_config),                        /* 10 */
-    NMC_META_GENERIC_WITH_NESTED("DHCP6", metagen_dhcp_config),                     /* 11 */
-    NMC_META_GENERIC_WITH_NESTED("BOND", nmc_fields_dev_show_master_prop + 1),      /* 12 */
-    NMC_META_GENERIC_WITH_NESTED("TEAM", nmc_fields_dev_show_team_prop + 1),        /* 13 */
-    NMC_META_GENERIC_WITH_NESTED("BRIDGE", nmc_fields_dev_show_master_prop + 1),    /* 14 */
-    NMC_META_GENERIC_WITH_NESTED("VLAN", nmc_fields_dev_show_vlan_prop + 1),        /* 15 */
-    NMC_META_GENERIC_WITH_NESTED("BLUETOOTH", nmc_fields_dev_show_bluetooth + 1),   /* 16 */
-    NMC_META_GENERIC_WITH_NESTED("CONNECTIONS", metagen_device_detail_connections), /* 17 */
+                                 metagen_device_detail_wimax_properties),            /* 6 */
+    NMC_META_GENERIC_WITH_NESTED("NSP", nmc_fields_dev_wimax_list + 1),              /* 7 */
+    NMC_META_GENERIC_WITH_NESTED("IP4", metagen_ip4_config),                         /* 8 */
+    NMC_META_GENERIC_WITH_NESTED("DHCP4", metagen_dhcp_config),                      /* 9 */
+    NMC_META_GENERIC_WITH_NESTED("IP6", metagen_ip6_config),                         /* 10 */
+    NMC_META_GENERIC_WITH_NESTED("DHCP6", metagen_dhcp_config),                      /* 11 */
+    NMC_META_GENERIC_WITH_NESTED("BOND", nmc_fields_dev_show_controller_prop + 1),   /* 12 */
+    NMC_META_GENERIC_WITH_NESTED("TEAM", nmc_fields_dev_show_team_prop + 1),         /* 13 */
+    NMC_META_GENERIC_WITH_NESTED("BRIDGE", nmc_fields_dev_show_controller_prop + 1), /* 14 */
+    NMC_META_GENERIC_WITH_NESTED("VLAN", nmc_fields_dev_show_vlan_prop + 1),         /* 15 */
+    NMC_META_GENERIC_WITH_NESTED("BLUETOOTH", nmc_fields_dev_show_bluetooth + 1),    /* 16 */
+    NMC_META_GENERIC_WITH_NESTED("CONNECTIONS", metagen_device_detail_connections),  /* 17 */
     NULL,
 };
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON                                 \
@@ -1511,7 +1511,7 @@ print_bond_bridge_info(NMDevice   *device,
     if (ports_str->len > 0)
         g_string_truncate(ports_str, ports_str->len - 1); /* Chop off last space */
 
-    tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_master_prop;
+    tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_controller_prop;
     out_indices = parse_output_fields(one_field, tmpl, FALSE, NULL, NULL);
     arr         = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_FIELD_NAMES);
     g_ptr_array_add(out.output_data, arr);
@@ -2219,6 +2219,13 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
     if (nmc->nowait_flag) {
         quit();
         return;
+    }
+
+    if (nmc->secret_agent) {
+        NMRemoteConnection *connection = nm_active_connection_get_connection(active);
+
+        nm_secret_agent_simple_enable(nmc->secret_agent,
+                                      nm_connection_get_path(NM_CONNECTION(connection)));
     }
 
     if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
@@ -3662,8 +3669,7 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     GByteArray        *bssid2_arr            = NULL;
     gs_free NMDevice **devices               = NULL;
     int                devices_idx;
-    char              *ssid_ask   = NULL;
-    char              *passwd_ask = NULL;
+    char              *ssid_ask = NULL;
     const GPtrArray   *avail_cons;
     gboolean           name_match = FALSE;
     int                i;
@@ -4021,29 +4027,15 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
         || (ap_rsn_flags != NM_802_11_AP_SEC_NONE
             && !NM_FLAGS_ANY(ap_rsn_flags,
                              NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))) {
-        const char                *con_password = NULL;
-        NMSettingWirelessSecurity *s_wsec       = NULL;
+        NMSettingWirelessSecurity *s_wsec = NULL;
 
-        if (connection) {
-            s_wsec = nm_connection_get_setting_wireless_security(connection);
-            if (s_wsec) {
-                if (ap_wpa_flags == NM_802_11_AP_SEC_NONE
-                    && ap_rsn_flags == NM_802_11_AP_SEC_NONE) {
-                    /* WEP */
-                    con_password = nm_setting_wireless_security_get_wep_key(s_wsec, 0);
-                } else if ((ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-                           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-                           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
-                    /* WPA PSK */
-                    con_password = nm_setting_wireless_security_get_psk(s_wsec);
-                }
-            }
-        }
-
-        /* Ask for missing password when one is expected and '--ask' is used */
-        if (!password && !con_password && nmc->ask) {
-            password = passwd_ask =
-                nmc_readline_echo(&nmc->nmc_config, nmc->nmc_config.show_secrets, _("Password: "));
+        /* Create secret agent */
+        nmc->secret_agent = nm_secret_agent_simple_new("nmcli-connect");
+        if (nmc->secret_agent) {
+            g_signal_connect(nmc->secret_agent,
+                             NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
+                             G_CALLBACK(nmc_secrets_requested),
+                             nmc);
         }
 
         if (password) {
@@ -4091,7 +4083,6 @@ finish:
     if (bssid2_arr)
         g_byte_array_free(bssid2_arr, TRUE);
     g_free(ssid_ask);
-    nm_free_secret(passwd_ask);
 }
 
 static GBytes *

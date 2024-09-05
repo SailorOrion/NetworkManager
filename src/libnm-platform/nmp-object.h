@@ -38,11 +38,12 @@ G_STATIC_ASSERT(sizeof(NMSockAddrUnion) == sizeof(((NMSockAddrUnion *) NULL)->in
 
 /* we initialize the largest union member, to ensure that all fields are initialized. */
 
-#define NM_SOCK_ADDR_UNION_INIT_UNSPEC \
-    {                                  \
-        .in6 = {                       \
-            .sin6_family = AF_UNSPEC,  \
-        },                             \
+#define NM_SOCK_ADDR_UNION_INIT_UNSPEC    \
+    {                                     \
+        .in6 =                            \
+            {                             \
+                .sin6_family = AF_UNSPEC, \
+            },                            \
     }
 
 int nm_sock_addr_union_cmp(const NMSockAddrUnion *a, const NMSockAddrUnion *b);
@@ -951,15 +952,15 @@ const NMPObject *nmp_cache_lookup_link_full(const NMPCache  *cache,
                                             NMPObjectMatchFn match_fn,
                                             gpointer         user_data);
 
-gboolean         nmp_cache_link_connected_for_slave(int ifindex_master, const NMPObject *slave);
+gboolean         nmp_cache_link_connected_for_port(int ifindex_controller, const NMPObject *port);
 gboolean         nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
-                                                       const NMPObject *master,
-                                                       const NMPObject *potential_slave,
-                                                       const NMPObject *ignore_slave);
-const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache  *cache,
-                                                                  int              master_ifindex,
-                                                                  const NMPObject *potential_slave,
-                                                                  const NMPObject *ignore_slave);
+                                                       const NMPObject *controller,
+                                                       const NMPObject *potential_port,
+                                                       const NMPObject *ignore_port);
+const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache *cache,
+                                                                  int controller_ifindex,
+                                                                  const NMPObject *potential_port,
+                                                                  const NMPObject *ignore_port);
 
 gboolean nmp_cache_use_udev_get(const NMPCache *cache);
 
@@ -993,10 +994,10 @@ NMPCacheOpsType nmp_cache_update_link_udev(NMPCache           *cache,
                                            struct udev_device *udevice,
                                            const NMPObject   **out_obj_old,
                                            const NMPObject   **out_obj_new);
-NMPCacheOpsType nmp_cache_update_link_master_connected(NMPCache         *cache,
-                                                       int               ifindex,
-                                                       const NMPObject **out_obj_old,
-                                                       const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_link_controller_connected(NMPCache         *cache,
+                                                           int               ifindex,
+                                                           const NMPObject **out_obj_old,
+                                                           const NMPObject **out_obj_new);
 
 static inline const NMDedupMultiEntry *
 nmp_cache_reresolve_main_entry(NMPCache                *cache,

@@ -80,7 +80,7 @@ typedef struct {
                                  NMDeviceState       new_state,
                                  NMDeviceState       old_state,
                                  NMDeviceStateReason reason);
-    void (*master_failed)(NMActiveConnection *connection);
+    void (*controller_failed)(NMActiveConnection *connection);
 
     void (*device_changed)(NMActiveConnection *connection,
                            NMDevice           *new_device,
@@ -175,6 +175,7 @@ NMActiveConnection *nm_active_connection_get_controller(NMActiveConnection *self
 gboolean nm_active_connection_get_controller_ready(NMActiveConnection *self);
 
 void nm_active_connection_set_controller(NMActiveConnection *self, NMActiveConnection *controller);
+void nm_active_connection_set_controller_dev(NMActiveConnection *self, NMDevice *controller_dev);
 
 void nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *parent);
 
