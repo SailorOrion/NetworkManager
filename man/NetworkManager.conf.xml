@@ -168,17 +168,16 @@ plugins-=remove-me
       <varlistentry>
         <term><varname>dhcp</varname></term>
         <listitem><para>This key sets up what DHCP client
-        NetworkManager will use. Allowed values are
-        <literal>dhclient</literal>, <literal>dhcpcd</literal>, and
-        <literal>internal</literal>. The <literal>dhclient</literal>
-        and <literal>dhcpcd</literal> options require the indicated
-        clients to be installed. The <literal>internal</literal>
-        option uses a built-in DHCP client which is not currently as
-        featureful as the external clients.</para>
-        <para>If this key is missing, it defaults to <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>.
-        If the chosen plugin is not available, clients are looked for
-        in this order: <literal>dhclient</literal>, <literal>dhcpcd</literal>,
-        <literal>internal</literal>.</para></listitem>
+        NetworkManager will use. Allowed values depend on build configuration and
+        typically include <literal>internal</literal> and <literal>dhcpcd</literal>.
+        Support for unmaintained <literal>dhclient</literal> client has been deprecated
+        and disabled by default.</para>
+        <para>The <literal>internal</literal> client is built-in, while other options
+        may require an external DHCP client to be installed.</para>
+        <para>If this key is missing, <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>
+        is used with a fallback to other suppored clients in this order:
+        <literal>internal</literal>, <literal>dhcpcd</literal>,
+        <literal>dhclient</literal>.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>no-auto-default</varname></term>
@@ -219,7 +218,7 @@ no-auto-default=*
             if specified (See <xref linkend="ignore-carrier"/>).
             Otherwise, it is a list of matches to specify for which device
             carrier should be ignored. See <xref linkend="device-spec"/> for the
-            syntax how to specify a device. Note that master types like
+            syntax how to specify a device. Note that controller types like
             bond, bridge, and team ignore carrier by default. You can however
             revert that default using the "except:" specifier (or better,
             use the per-device setting instead of the deprecated setting).
@@ -492,7 +491,7 @@ no-auto-default=*
             files without preserving their contents.
           </para>
           <para>
-            The path can also be overriden by pointing to a specific
+            The path can also be overridden by pointing to a specific
             existing and writable directory.  On the other hand setting
             this to an empty string or any other value disables the
             profile conversion mechanism.
@@ -858,7 +857,12 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>connection.autoconnect-ports</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.autoconnect-slaves</varname></term>
+          <listitem><para>This is deprecated, please use "connection.autoconnect-ports" instead.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.down-on-poweroff</varname></term>
@@ -1023,23 +1027,20 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.ip6-privacy</varname></term>
-          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, fall back to the original
-            value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/use_tempaddr" from before NetworkManager
-            started.
+          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
+            "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.temp-valid-lifetime</varname></term>
-          <listitem><para>If <literal>ipv6.temp-valid-lifetime</literal> is unset, fall back to the
-            original value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/temp_valid_lft" from before
-            NetworkManager started.
+          <listitem><para>If <literal>ipv6.temp-valid-lifetime</literal> is unset, use the
+            content of "/proc/sys/net/ipv6/conf/default/temp_valid_lft" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.temp-preferred-lifetime</varname></term>
-          <listitem><para>If <literal>ipv6.temp-preferred-lifetime</literal> is unset, fall back to
-            the original value of "/proc/sys/net/ipv6/conf/&lt;iface&gt;/temp_prefered_lft" from
-            before NetworkManager started.
+          <listitem><para>If <literal>ipv6.temp-preferred-lifetime</literal> is unset, use
+            the content of "/proc/sys/net/ipv6/conf/default/temp_prefered_lft" as last fallback.
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -1128,7 +1129,7 @@ ipv6.ip6-privacy=0
 <programlisting>
 [connection]
 ipv6.ip6-privacy=0
-connection.autoconnect-slaves=1
+connection.autoconnect-ports=1
 vpn.timeout=120
 
 [connection-wifi-wlan0]
@@ -1482,6 +1483,12 @@ managed=1
           connectivity is checked when a network connection exists. If
           set to 0 connectivity checking is disabled.  If missing, the
           default is 300 seconds.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>timeout</varname></term>
+          <listitem><para>Specified in seconds; controls how long
+          to wait for a response before connectivity is marked as
+          limited.  If missing, the default is 20 seconds.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>response</varname></term>

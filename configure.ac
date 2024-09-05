@@ -7,14 +7,28 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [47])
-m4_define([nm_micro_version], [5])
+m4_define([nm_minor_version], [51])
+m4_define([nm_micro_version], [0])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
 AC_INIT([NetworkManager], [nm_version],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
         [NetworkManager])
+
+deprecation_message() {
+    echo "Building with Autotools is deprecated; meson is the recommended way to build NetworkManager."
+    echo "To learn more, see the CONTRIBUTING.md file."
+    echo "To ignore this, pass '--disable-autotools-deprecation' when configuring."
+    exit 1
+}
+
+AC_ARG_ENABLE([autotools-deprecation],
+    AS_HELP_STRING([--disable-autotools-deprecation],
+                   [Building with autotools is deprecated, passing this argument overrides this error.]),
+    [ test "$enableval" != "no" && deprecation_message ],
+    [ deprecation_message ]
+)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -901,18 +915,18 @@ fi
 
 # DHCP client support
 AC_ARG_WITH([dhclient],
-            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient support]))
-if test "$with_dhclient" != "no"; then
-	with_dhclient_="$with_dhclient"
+            AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient support (deprecated)]),
+            with_dhclient="$withval",
+            with_dhclient="no")
+if test "$with_dhclient" = yes; then
 	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
 	if test "$with_dhclient" = "no"; then
-		if test "$with_dhclient_" = yes; then
-			AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
-			with_dhclient=/usr/sbin/dhclient
-		fi
+		AC_MSG_WARN([dhclient not found, assume path /usr/sbin/dhclient])
+		with_dhclient=/usr/sbin/dhclient
 	fi
 fi
 if test "$with_dhclient" != "no"; then
+	AC_MSG_WARN([dhclient is unmaintained and support for it is deprecated])
 	AC_DEFINE(WITH_DHCLIENT, 1, [Define if you have dhclient])
 	AC_DEFINE_UNQUOTED(DHCLIENT_PATH, "$with_dhclient", [Define path to dhclient])
 else
@@ -1463,7 +1477,7 @@ echo
 
 echo "DHCP clients (default $config_dhcp_default):"
 echo "  dhcpcanon: $with_dhcpcanon"
-echo "  dhclient: $with_dhclient"
+echo "  dhclient: $with_dhclient (deprecated)"
 echo "  dhcpcd: $with_dhcpcd"
 echo
 

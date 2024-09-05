@@ -154,13 +154,13 @@ typedef enum {
     NM_LINK_TYPE_WIREGUARD,
 #define _NM_LINK_TYPE_SW_LAST NM_LINK_TYPE_WIREGUARD
 
-/* Software types with slaves */
-#define _NM_LINK_TYPE_SW_MASTER_FIRST NM_LINK_TYPE_BRIDGE
+/* Software types with ports */
+#define _NM_LINK_TYPE_SW_CONTROLLER_FIRST NM_LINK_TYPE_BRIDGE
     NM_LINK_TYPE_BRIDGE,
     NM_LINK_TYPE_BOND,
     NM_LINK_TYPE_HSR,
     NM_LINK_TYPE_TEAM,
-#define _NM_LINK_TYPE_SW_MASTER_LAST NM_LINK_TYPE_TEAM
+#define _NM_LINK_TYPE_SW_CONTROLLER_LAST NM_LINK_TYPE_TEAM
 
 #define _NM_LINK_TYPE_REAL_LAST NM_LINK_TYPE_TEAM
 
@@ -171,15 +171,16 @@ typedef enum {
 static inline gboolean
 nm_link_type_is_software(NMLinkType link_type)
 {
-    G_STATIC_ASSERT(_NM_LINK_TYPE_SW_LAST + 1 == _NM_LINK_TYPE_SW_MASTER_FIRST);
+    G_STATIC_ASSERT(_NM_LINK_TYPE_SW_LAST + 1 == _NM_LINK_TYPE_SW_CONTROLLER_FIRST);
 
-    return link_type >= _NM_LINK_TYPE_SW_FIRST && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+    return link_type >= _NM_LINK_TYPE_SW_FIRST && link_type <= _NM_LINK_TYPE_SW_CONTROLLER_LAST;
 }
 
 static inline gboolean
-nm_link_type_supports_slaves(NMLinkType link_type)
+nm_link_type_supports_ports(NMLinkType link_type)
 {
-    return link_type >= _NM_LINK_TYPE_SW_MASTER_FIRST && link_type <= _NM_LINK_TYPE_SW_MASTER_LAST;
+    return link_type >= _NM_LINK_TYPE_SW_CONTROLLER_FIRST
+           && link_type <= _NM_LINK_TYPE_SW_CONTROLLER_LAST;
 }
 
 /*****************************************************************************/
@@ -198,14 +199,15 @@ typedef struct {
 
 #define _NM_ETHER_ADDR_INIT(a0, a1, a2, a3, a4, a5) \
     {                                               \
-        .ether_addr_octet = {                       \
-            (a0),                                   \
-            (a1),                                   \
-            (a2),                                   \
-            (a3),                                   \
-            (a4),                                   \
-            (a5),                                   \
-        },                                          \
+        .ether_addr_octet =                         \
+            {                                       \
+                (a0),                               \
+                (a1),                               \
+                (a2),                               \
+                (a3),                               \
+                (a4),                               \
+                (a5),                               \
+            },                                      \
     }
 
 #define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
@@ -806,7 +808,8 @@ typedef struct {
 
 #define NM_UTILS_FLAGS2STR(f, n) \
     {                            \
-        .flag = f, .name = "" n, \
+        .flag = f,               \
+        .name = "" n,            \
     }
 
 #define NM_UTILS_FLAGS2STR_DEFINE(fcn_name, flags_type, ...)                    \
@@ -1749,10 +1752,7 @@ typedef struct {
     };
 } NMUtilsNamedValue;
 
-#define NM_UTILS_NAMED_VALUE_INIT(n, v) \
-    {                                   \
-        .name = (n), .value_ptr = (v)   \
-    }
+#define NM_UTILS_NAMED_VALUE_INIT(n, v) {.name = (n), .value_ptr = (v)}
 
 NMUtilsNamedValue *nm_utils_hash_to_array_full(GHashTable         *hash,
                                                guint              *out_len,
@@ -2444,10 +2444,7 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
         __VA_ARGS__ NULL,                                   \
     }))
 
-#define NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(name_, ...) \
-    {                                                \
-        .ref_count = -1, .name = name_, __VA_ARGS__  \
-    }
+#define NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(name_, ...) {.ref_count = -1, .name = name_, __VA_ARGS__}
 
 #define NM_DEFINE_GDBUS_SIGNAL_INFO(name_, ...) \
     ((GDBusSignalInfo *) (&(                    \
@@ -2458,10 +2455,7 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
         __VA_ARGS__ NULL,                               \
     }))
 
-#define NM_DEFINE_GDBUS_METHOD_INFO_INIT(name_, ...) \
-    {                                                \
-        .ref_count = -1, .name = name_, __VA_ARGS__  \
-    }
+#define NM_DEFINE_GDBUS_METHOD_INFO_INIT(name_, ...) {.ref_count = -1, .name = name_, __VA_ARGS__}
 
 #define NM_DEFINE_GDBUS_METHOD_INFO(name_, ...) \
     ((GDBusMethodInfo *) (&(                    \
@@ -2473,9 +2467,7 @@ int     nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_po
     }))
 
 #define NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(name_, ...) \
-    {                                                   \
-        .ref_count = -1, .name = name_, __VA_ARGS__     \
-    }
+    {.ref_count = -1, .name = name_, __VA_ARGS__}
 
 #define NM_DEFINE_GDBUS_INTERFACE_INFO(name_, ...) \
     ((GDBusInterfaceInfo *) (&(                    \
